@@ -70,6 +70,12 @@
 // Linear Servo pin
 #define LINEAR_SERVO_PIN        (PB13)
 
+// Switch
+#define RELAY_1                 (PB0)
+#define RELAY_2                 (PB1)
+#define RELAY_3                 (PB2)
+#define RELAY_4                 (PB10)
+
 //I2C2 pins
 #define SCL1_PIN                (PB6)
 #define SDA1_PIN                (PB7)

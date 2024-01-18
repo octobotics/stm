@@ -33,6 +33,11 @@
     attach pin:
       PB13 : LINEAR_SERVO_PIN
 
+  (Switching)
+    RELAY_1 (PB0)   : 1
+    RELAY_2 (PB1)   : 2
+    RELAY_3 (PB2)   : 3
+    RELAY_4 (PB10)  : 4
 
 
 */
@@ -55,6 +60,7 @@ void flowPulseCounter();
 /*************************** <ros function declarations> ***************************/
 void init_pub_sub_serv();
 void callback_motor_toggle(const Trigger::Request &req, Trigger::Response &res);
+void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Response &res);
 
 
 /*
@@ -78,6 +84,7 @@ ros::Publisher wire_pub("wire_value", &wireVal);
    Server
 */
 ros::ServiceServer<Trigger::Request, Trigger::Response> motor_trig("motor_trig", &callback_motor_toggle);       // 12V DC motor
+ros::ServiceServer<RelayControl::Request, RelayControl::Response> relay_trig("relay_toggle_channel", &callback_relay_toggle); // switching
 
 
 /*************************** <setup> ***************************/
@@ -139,14 +146,26 @@ void gpioInit()
   // inbuilt led
   pinMode(LED_PIN, OUTPUT);
 
+  // switch
+  pinMode(RELAY_1, OUTPUT);
+  pinMode(RELAY_2, OUTPUT);
+  pinMode(RELAY_3, OUTPUT);
+  pinMode(RELAY_4, OUTPUT);
+
+
 
 
   // 12V DC motor (cytron)
   digitalWrite(ACT_A1_PIN, LOW);
   digitalWrite(ACT_A2_PIN, LOW);
 
-  analogWrite(LINEAR_SERVO_PIN, 0);
+  analogWrite(LINEAR_SERVO_PIN, LOW);
   digitalWrite(LED_PIN, HIGH);
+
+  digitalWrite(RELAY_1, LOW);
+  digitalWrite(RELAY_2, LOW);
+  digitalWrite(RELAY_3, LOW);
+  digitalWrite(RELAY_4, LOW);
 
   // flow sensor pulse count
   attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), flowPulseCounter, RISING);
@@ -312,10 +331,11 @@ void init_pub_sub_serv()
 
   //Service
   nh.advertiseService(motor_trig);
+  nh.advertiseService(relay_trig);
 }
 
 
-void callback_motor_toggle(const Trigger::Request &req, Trigger::Response &res)
+void callback_motor_toggle(const Trigger::Request &, Trigger::Response &res)
 {
   if (motorFlag)
   {
@@ -335,5 +355,44 @@ void callback_motor_toggle(const Trigger::Request &req, Trigger::Response &res)
 }
 
 
+void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Response &res)
+{
+  switch (req.data)
+  {
+    // turn off everything
+    case 0:
+      digitalWrite(RELAY_1, LOW);
+      digitalWrite(RELAY_2, LOW);
+      digitalWrite(RELAY_3, LOW);
+      digitalWrite(RELAY_4, LOW);
+      break;
+
+    // RELAY_1
+    case 1:
+      digitalWrite(RELAY_1, HIGH - digitalRead(RELAY_1));
+      break;
+
+    // RELAY_2
+    case 2:
+      digitalWrite(RELAY_2, HIGH - digitalRead(RELAY_2));
+      break;
+
+    // RELAY_3
+    case 3:
+      digitalWrite(RELAY_3, HIGH - digitalRead(RELAY_3));
+      break;
+
+    // RELAY_4
+    case 4:
+      digitalWrite(RELAY_4, HIGH - digitalRead(RELAY_4));
+      break;
+
+    default:
+      break;
+  }
+
+  digitalWrite(LED_PIN, HIGH - digitalRead(LED_PIN));
+  res.response = true;
+}
 
 //  -- END OF FILE --
