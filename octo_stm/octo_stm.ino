@@ -90,9 +90,11 @@ ros::ServiceServer<RelayControl::Request, RelayControl::Response> relay_trig("re
 /*************************** <setup> ***************************/
 void setup() {
 
-  Serial.begin(115200);
+  Serial.begin(57600);
   SerialL.begin(9600);
   SerialR.begin(9600);
+  
+  nh.getHardware()->setBaud(57600);
 
   if (digitalPinToInterrupt(FLOW_SENSOR_PIN) == NOT_AN_INTERRUPT)
   {
@@ -117,6 +119,9 @@ void loop() {
   getDistanceL();
   getDistanceR();
   getFlow();
+  
+  nh.spinOnce();
+  delay(1);
 }
 
 
