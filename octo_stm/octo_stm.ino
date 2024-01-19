@@ -75,7 +75,7 @@ std_msgs::Int64 distL;
 ros::Publisher distL_pub("dist_l", &distL);
 
 std_msgs::Int64 distR;
-ros::Publisher distR_pub("dist_l", &distR);
+ros::Publisher distR_pub("dist_r", &distR);
 
 std_msgs::Float32 wireVal;
 ros::Publisher wire_pub("wire_value", &wireVal);
@@ -92,7 +92,7 @@ void setup() {
 
   SerialL.begin(9600);
   SerialR.begin(9600);
-  
+
   nh.getHardware()->setBaud(57600);
 
   if (digitalPinToInterrupt(FLOW_SENSOR_PIN) == NOT_AN_INTERRUPT)
@@ -118,7 +118,7 @@ void loop() {
   getDistanceL();
   getDistanceR();
   getFlow();
-  
+
   nh.spinOnce();
   delay(1);
 }
