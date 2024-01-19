@@ -90,7 +90,6 @@ ros::ServiceServer<RelayControl::Request, RelayControl::Response> relay_trig("re
 /*************************** <setup> ***************************/
 void setup() {
 
-  Serial.begin(57600);
   SerialL.begin(9600);
   SerialR.begin(9600);
   
