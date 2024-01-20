@@ -47,6 +47,7 @@
 /*************************** <include header files> ***************************/
 #include "stm_include.h"
 #include "ros_include.h"
+#include "std_msgs/Int32.h"
 
 /*************************** <std function declarations> ***************************/
 void gpioInit();
@@ -80,6 +81,8 @@ ros::Publisher distR_pub("dist_r", &distR);
 std_msgs::Float32 wireVal;
 ros::Publisher wire_pub("wire_value", &wireVal);
 
+
+
 /*
    Server
 */
@@ -90,9 +93,10 @@ ros::ServiceServer<RelayControl::Request, RelayControl::Response> relay_trig("re
 /*************************** <setup> ***************************/
 void setup() {
 
+  Serial.begin(57600);
   SerialL.begin(9600);
   SerialR.begin(9600);
-
+  
   nh.getHardware()->setBaud(57600);
 
   if (digitalPinToInterrupt(FLOW_SENSOR_PIN) == NOT_AN_INTERRUPT)
@@ -112,14 +116,13 @@ void setup() {
 
 /*************************** <loop> ***************************/
 void loop() {
-
-  controlLinServo();
   getWire();
   getDistanceL();
   getDistanceR();
   getFlow();
-
+  
   nh.spinOnce();
+  controlLinServo(servoPose);
   delay(1);
 }
 
@@ -176,30 +179,39 @@ void gpioInit()
 
 }
 
-
-void controlLinServo()
+void servoPoseCallback(const std_msgs::Int32 &msg)
 {
-  //test
 
+  servoPose = msg.data;
+
+  Serial.print("Received servo pose: ");
+  Serial.println(servoPose);
+}
+
+std_msgs::Int32 servoPoseMsg;
+ros::Subscriber<std_msgs::Int32> servoPoseSub("servo_pose", &servoPoseCallback);
+
+void controlLinServo(int pose)
+{
   if (millis() - prev_servo_millis > SERVO_DELAY)
   {
-    if (servoPose <= 0) {
+    if (pose <= 0) {
       servoFlag = true;
-    } else if (servoPose >= 255) {
+    } else if (pose >= 255) {
       servoFlag = false;
     }
 
     debug("servoFlag: ");
     debug(servoFlag);
     debug(" | servoPose:" );
-    debugln(servoPose);
+    debugln(pose);
 
-    analogWrite(LINEAR_SERVO_PIN, servoPose);
+    analogWrite(LINEAR_SERVO_PIN, pose);
 
     if (servoFlag == true) {
-      servoPose++;
+      pose++;
     } else {
-      servoPose--;
+      pose--;
     }
     prev_servo_millis = millis();
   }
@@ -318,6 +330,7 @@ void getFlow()
 void flowPulseCounter()
 {
   pulseCount++;
+  
 }
 
 
@@ -336,6 +349,9 @@ void init_pub_sub_serv()
   //Service
   nh.advertiseService(motor_trig);
   nh.advertiseService(relay_trig);
+
+  //Subscriber
+  nh.subscribe(servoPoseSub);
 }
 
 
@@ -357,6 +373,7 @@ void callback_motor_toggle(const Trigger::Request &, Trigger::Response &res)
 
   res.success = true;
 }
+
 
 
 void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Response &res)
