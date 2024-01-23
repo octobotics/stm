@@ -48,6 +48,7 @@
 #include "stm_include.h"
 #include "ros_include.h"
 #include "std_msgs/Int32.h"
+#include "std_msgs/Int8.h"
 
 /*************************** <std function declarations> ***************************/
 void gpioInit();
@@ -58,11 +59,15 @@ void getDistanceR();
 void getFlow();
 void flowPulseCounter();
 
+void callback_linear(const std_msgs::Int8 &cam_data);
+void setup_gpio_motor();
+void control_motor(int direction);
+
 /*************************** <ros function declarations> ***************************/
 void init_pub_sub_serv();
 void callback_motor_toggle(const Trigger::Request &req, Trigger::Response &res);
 void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Response &res);
-
+void motorDirectionCallback(const std_msgs::Int8 &msg);
 
 /*
    ros-handle
@@ -81,8 +86,11 @@ ros::Publisher distR_pub("dist_r", &distR);
 std_msgs::Float32 wireVal;
 ros::Publisher wire_pub("wire_value", &wireVal);
 
+std_msgs::Int8 motorDirection;
+ros::Subscriber<std_msgs::Int8> motorDirectionSub("/motor_direction", &motorDirectionCallback);  // New subscriber
 
-
+std_msgs::Float32 flow_msg;
+ros::Publisher flow_pub("flow_value", &flow_msg);
 /*
    Server
 */
@@ -109,6 +117,7 @@ void setup() {
 
   gpioInit();
   nh.initNode();
+  setup_gpio_motor();
   init_pub_sub_serv();
 
 }
@@ -179,6 +188,18 @@ void gpioInit()
 
 }
 
+void setup_gpio_motor()
+{
+  
+
+  
+  pinMode(ACT_A1_PIN, OUTPUT);
+  pinMode(ACT_A2_PIN, OUTPUT);
+
+  
+  digitalWrite(ACT_A1_PIN, LOW);
+  digitalWrite(ACT_A2_PIN, LOW);
+}
 void servoPoseCallback(const std_msgs::Int32 &msg)
 {
 
@@ -323,7 +344,11 @@ void getFlow()
     debugln(" mL");
     pulseCount = 0;
 
+    flow_msg.data = flowRate_ml;
+    flow_pub.publish(&flow_msg);
+
     attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), flowPulseCounter, RISING);
+    
   }
 }
 
@@ -345,6 +370,7 @@ void init_pub_sub_serv()
   nh.advertise(distL_pub);
   nh.advertise(distR_pub);
   nh.advertise(wire_pub);
+  nh.advertise(flow_pub);
 
   //Service
   nh.advertiseService(motor_trig);
@@ -352,6 +378,7 @@ void init_pub_sub_serv()
 
   //Subscriber
   nh.subscribe(servoPoseSub);
+  nh.subscribe(motorDirectionSub);
 }
 
 
@@ -374,6 +401,29 @@ void callback_motor_toggle(const Trigger::Request &, Trigger::Response &res)
   res.success = true;
 }
 
+void motorDirectionCallback(const std_msgs::Int8 &msg) {
+  int direction = msg.data;
+  control_motor(direction);
+}
+
+void control_motor(int direction) {
+  Serial.print("Received motor direction: ");
+  Serial.println(direction);
+
+  digitalWrite(ACT_A1_PIN, LOW);
+  digitalWrite(ACT_A2_PIN, LOW);
+
+  if (direction == 1) {
+    digitalWrite(ACT_A1_PIN, HIGH);  
+    digitalWrite(ACT_A2_PIN, LOW); 
+  } else if (direction == 2) {
+    digitalWrite(ACT_A1_PIN, HIGH);
+    digitalWrite(ACT_A2_PIN, HIGH);
+  } else {
+    digitalWrite(ACT_A1_PIN, LOW);
+    digitalWrite(ACT_A2_PIN, LOW);
+  }
+}
 
 
 void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Response &res)
