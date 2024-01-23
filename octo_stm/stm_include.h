@@ -53,32 +53,32 @@
 
 
 //delay
-#define WIRE_DELAY        (1000.0F) // 1 sec
-#define FLOW_DELAY        (1000.0F) // 1 sec
+#define WIRE_DELAY        (500.0F) // 0.5 sec
+#define FLOW_DELAY        (3000.0F) // 1 sec
 #define MOTION_DELAY      (3000.0F) // 3 sec
 #define STOP_DELAY        (1000.0F) // 1 sec
 #define SERVO_DELAY       (100.0F) // 0.1 sec
 
 // Sensor pins
-#define FLOW_SENSOR_PIN         (PA0)
+#define FLOW_SENSOR_PIN         (PB14)
 #define LED_PIN                 (PC13)
 
 //DC-motor pins
-#define ACT_A1_PIN              (PA7) //PWM-1
-#define ACT_A2_PIN              (PA6) //DIR-1
+#define ACT_A1_PIN              (PA8) //PWM-1
+#define ACT_A2_PIN              (PB15) //DIR-1
 
 // Linear Servo pin
 #define LINEAR_SERVO_PIN        (PB13)
 
 // Switch
-#define RELAY_1                 (PB0)
-#define RELAY_2                 (PB1)
-#define RELAY_3                 (PB2)
-#define RELAY_4                 (PB10)
+#define RELAY_1                 (PB8)
+#define RELAY_2                 (PB7)
+#define RELAY_3                 (PB6)
+#define RELAY_4                 (PB5)
 
 //I2C2 pins
-#define SCL1_PIN                (PB6)
-#define SDA1_PIN                (PB7)
+#define SCL1_PIN                (PB10)
+#define SDA1_PIN                (PB3)
 
 // UART2 pins
 #define RX2_PIN                 (PA3)
@@ -112,6 +112,8 @@ unsigned long prev_flow_millis = RESET;
 float flowRate = RESET;
 unsigned int flowRate_ml = RESET;
 unsigned long totalVolume = RESET;
+unsigned long lastFlowPublishTime = 0;
+const unsigned long flowPublishInterval = 3000;
 
 // distance(left)
 unsigned char dataL_buffer[4] = {0};
@@ -122,6 +124,7 @@ unsigned char csL = RESET; //checksum-left
 unsigned char dataR_buffer[4] = {0};
 int distanceR  = RESET;
 unsigned char csR = RESET; //checksum-left
+
 
 
 //  -- END OF FILE --
