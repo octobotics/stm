@@ -53,8 +53,8 @@
 
 
 //delay
-#define WIRE_DELAY        (500.0F) // 0.5 sec
-#define FLOW_DELAY        (3000.0F) // 1 sec
+#define WIRE_DELAY        (100.0F) // 0.1 sec
+#define FLOW_DELAY        (3000.0F) // 3 sec
 #define MOTION_DELAY      (3000.0F) // 3 sec
 #define STOP_DELAY        (1000.0F) // 1 sec
 #define SERVO_DELAY       (100.0F) // 0.1 sec
