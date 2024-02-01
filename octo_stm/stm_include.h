@@ -54,7 +54,7 @@
 
 //delay
 #define WIRE_DELAY        (100.0F) // 0.1 sec
-#define FLOW_DELAY        (3000.0F) // 3 sec
+#define FLOW_DELAY        (1000.0F) // 3 sec
 #define MOTION_DELAY      (3000.0F) // 3 sec
 #define STOP_DELAY        (1000.0F) // 1 sec
 #define SERVO_DELAY       (100.0F) // 0.1 sec
@@ -71,10 +71,10 @@
 #define LINEAR_SERVO_PIN        (PB13)
 
 // Switch
-#define RELAY_1                 (PB8)
-#define RELAY_2                 (PB7)
-#define RELAY_3                 (PB6)
-#define RELAY_4                 (PB5)
+#define RELAY_1                 (PB9) //crawler
+#define RELAY_2                 (PB6) //light
+#define RELAY_3                 (PB5) //bottom light
+#define RELAY_4                 (PB4) //pump
 
 //I2C2 pins
 #define SCL1_PIN                (PB10)
