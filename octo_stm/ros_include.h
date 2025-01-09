@@ -12,6 +12,7 @@
 using std_srvs::Trigger;
 using stm_interface::RelayControl;
 
+bool servo_flag = true;
 
 
 //  -- END OF FILE --
