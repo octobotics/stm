@@ -52,11 +52,11 @@
 
 /*************************** <std function declarations> ***************************/
 void gpioInit();
-void controlLinServo();
+//void controlLinServo();
 void getWire();
 void getDistanceL();
 void getDistanceR();
-void getFlow();
+//void getFlow();
 void flowPulseCounter();
 
 void callback_linear(const std_msgs::Int8 &cam_data);
@@ -67,6 +67,8 @@ void control_motor(int direction);
 void init_pub_sub_serv();
 void callback_motor_toggle(const Trigger::Request &req, Trigger::Response &res);
 void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Response &res);
+void callback_servo_toggle(const Trigger::Request &req, Trigger::Response &res);
+
 void motorDirectionCallback(const std_msgs::Int8 &msg);
 
 /*
@@ -96,6 +98,8 @@ ros::Publisher flow_pub("flow_value", &flow_msg);
 */
 ros::ServiceServer<Trigger::Request, Trigger::Response> motor_trig("motor_trig", &callback_motor_toggle);       // 12V DC motor
 ros::ServiceServer<RelayControl::Request, RelayControl::Response> relay_trig("relay_toggle_channel", &callback_relay_toggle); // switching
+ros::ServiceServer<Trigger::Request, Trigger::Response> servo_trig("servo_trigger_channel", &callback_servo_toggle);       // grinder
+
 
 
 /*************************** <setup> ***************************/
@@ -107,18 +111,19 @@ void setup() {
   
   nh.getHardware()->setBaud(57600);
 
-  if (digitalPinToInterrupt(FLOW_SENSOR_PIN) == NOT_AN_INTERRUPT)
-  {
-    debugln("Pin PA0 is not an interrupt capable.");
-  } else
-  {
-    debugln("Pin PA0 is an interrupt capable.");
-  }
+//  if (digitalPinToInterrupt(FLOW_SENSOR_PIN) == NOT_AN_INTERRUPT)
+//  {
+//    debugln("Pin PA0 is not an interrupt capable.");
+//  } else
+//  {
+//    debugln("Pin PA0 is an interrupt capable.");
+//  }
 
   gpioInit();
   nh.initNode();
   setup_gpio_motor();
   init_pub_sub_serv();
+  setup_servos();
 
 }
 
@@ -128,7 +133,7 @@ void loop() {
   getWire();
   getDistanceL();
   getDistanceR();
-  getFlow();
+  //getFlow();
   
   nh.spinOnce();
   controlLinServo(servoPose);
@@ -157,7 +162,7 @@ void gpioInit()
   pinMode(LINEAR_SERVO_PIN, OUTPUT);
 
   // flow sensor
-  pinMode(FLOW_SENSOR_PIN, INPUT);
+  //pinMode(FLOW_SENSOR_PIN, INPUT);
 
   // inbuilt led
   pinMode(LED_PIN, OUTPUT);
@@ -167,6 +172,7 @@ void gpioInit()
   pinMode(RELAY_2, OUTPUT);
   pinMode(RELAY_3, OUTPUT);
   pinMode(RELAY_4, OUTPUT);
+  pinMode(RELAY_5, OUTPUT);
 
 
 
@@ -175,17 +181,31 @@ void gpioInit()
   digitalWrite(ACT_A1_PIN, LOW);
   digitalWrite(ACT_A2_PIN, LOW);
 
-  analogWrite(LINEAR_SERVO_PIN, LOW);
+//  analogWrite(LINEAR_SERVO_PIN, LOW);
   digitalWrite(LED_PIN, HIGH);
 
   digitalWrite(RELAY_1, LOW);
   digitalWrite(RELAY_2, LOW);
   digitalWrite(RELAY_3, LOW);
   digitalWrite(RELAY_4, LOW);
+  digitalWrite(RELAY_5, LOW);
 
   // flow sensor pulse count
-  attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), flowPulseCounter, RISING);
+  //attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), flowPulseCounter, RISING);
 
+}
+
+void setup_servos()
+{
+
+  // servo
+  buffTool.attach(BUFF_TOOL); // grinder
+  buffTool.write(RESET);
+
+  //cam_base.attach(CAM_BASE);   // Camera base
+  //cam_mount.attach(CAM_MOUNT); // Camera mount
+
+  buffTool.write(BUFFING_SPEED_RESET); // grinder
 }
 
 void setup_gpio_motor()
@@ -321,36 +341,36 @@ void getDistanceR()
   }
 
 }
-void getFlow()
-{
-  if (millis() - prev_flow_millis > FLOW_DELAY) {
-
-    detachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN));
-
-    flowRate = ((FLOW_DELAY / (millis() - prev_flow_millis)) * pulseCount) / FLOW_CONSTANT;
-    prev_flow_millis = millis();
-
-
-    flowRate_ml = (flowRate / 60) * 1000;
-    totalVolume  += flowRate_ml;
-
-    debug("flowRate: ");
-    debug(flowRate_ml);
-    debug(" mL/s | ");
-
-
-    debug("flowVolume: ");
-    debug(totalVolume);
-    debugln(" mL");
-    pulseCount = 0;
-
-    flow_msg.data = flowRate_ml;
-    flow_pub.publish(&flow_msg);
-
-    attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), flowPulseCounter, RISING);
-    
-  }
-}
+//void getFlow()
+//{
+//  if (millis() - prev_flow_millis > FLOW_DELAY) {
+//
+//    detachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN));
+//
+//    flowRate = ((FLOW_DELAY / (millis() - prev_flow_millis)) * pulseCount) / FLOW_CONSTANT;
+//    prev_flow_millis = millis();
+//
+//
+//    flowRate_ml = (flowRate / 60) * 1000;
+//    totalVolume  += flowRate_ml;
+//
+//    debug("flowRate: ");
+//    debug(flowRate_ml);
+//    debug(" mL/s | ");
+//
+//
+//    debug("flowVolume: ");
+//    debug(totalVolume);
+//    debugln(" mL");
+//    pulseCount = 0;
+//
+//    flow_msg.data = flowRate_ml;
+//    flow_pub.publish(&flow_msg);
+//
+//    attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), flowPulseCounter, RISING);
+//    
+//  }
+//}
 
 void flowPulseCounter()
 {
@@ -375,6 +395,7 @@ void init_pub_sub_serv()
   //Service
   nh.advertiseService(motor_trig);
   nh.advertiseService(relay_trig);
+  nh.advertiseService(servo_trig);
 
   //Subscriber
   nh.subscribe(servoPoseSub);
@@ -397,6 +418,25 @@ void callback_motor_toggle(const Trigger::Request &, Trigger::Response &res)
     res.message = "motor: off";
   }
   motorFlag = !motorFlag;
+
+  res.success = true;
+}
+
+void callback_servo_toggle(const Trigger::Request &req, Trigger::Response &res)
+{
+  if (servo_flag)
+  {
+    buffTool.write(BUFFING_SPEED_SET);
+    //send_status.data = BUFF_TOOL_ON;
+  }
+  else
+  {
+    buffTool.write(BUFFING_SPEED_RESET);
+    //send_status.data = BUFF_TOOL_OFF;
+  }
+  servo_flag = !servo_flag;
+
+  //arm_tool_status.publish(&send_status);
 
   res.success = true;
 }
@@ -436,6 +476,8 @@ void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Respo
       digitalWrite(RELAY_2, LOW);
       digitalWrite(RELAY_3, LOW);
       digitalWrite(RELAY_4, LOW);
+      digitalWrite(RELAY_5, LOW);
+      
       break;
 
     // RELAY_1
@@ -457,6 +499,9 @@ void callback_relay_toggle(const RelayControl::Request &req, RelayControl::Respo
     case 4:
       digitalWrite(RELAY_4, HIGH - digitalRead(RELAY_4));
       break;
+
+    case 5:
+      digitalWrite(RELAY_5, HIGH - digitalRead(RELAY_5));
 
     default:
       break;
