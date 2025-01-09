@@ -2,6 +2,7 @@
 #include <Wire.h>
 //#include <SoftwareSerial.h>
 #include "ADS1X15.h"
+#include <Servo.h>
 
 /*************************** <UART> ***************************/
 /**
@@ -48,19 +49,19 @@
 
 
 // Flow Sensor
-#define FLOW_CONSTANT       (1.0F)
+#define FLOW_CONSTANT       (6.5F)
 
 
 
 //delay
 #define WIRE_DELAY        (100.0F) // 0.1 sec
-#define FLOW_DELAY        (1000.0F) // 3 sec
+//#define FLOW_DELAY        (1000.0F) // 3 sec
 #define MOTION_DELAY      (3000.0F) // 3 sec
 #define STOP_DELAY        (1000.0F) // 1 sec
 #define SERVO_DELAY       (100.0F) // 0.1 sec
 
 // Sensor pins
-#define FLOW_SENSOR_PIN         (PB14)
+//#define FLOW_SENSOR_PIN         (PB14)
 #define LED_PIN                 (PC13)
 
 //DC-motor pins
@@ -68,13 +69,19 @@
 #define ACT_A2_PIN              (PB15) //DIR-1
 
 // Linear Servo pin
-#define LINEAR_SERVO_PIN        (PB13)
+#define LINEAR_SERVO_PIN        (PB13) 
+#define BUFF_TOOL               (PB14) //ESC
+
+//Buffing tool speed
+#define BUFFING_SPEED_SET       (80)
+#define BUFFING_SPEED_RESET     (0)
 
 // Switch
 #define RELAY_1                 (PB9) //crawler
 #define RELAY_2                 (PB6) //light
 #define RELAY_3                 (PB5) //bottom light
 #define RELAY_4                 (PB4) //pump
+#define RELAY_5                 (PB7) //tentative
 
 //I2C2 pins
 #define SCL1_PIN                (PB10)
@@ -125,6 +132,7 @@ unsigned char dataR_buffer[4] = {0};
 int distanceR  = RESET;
 unsigned char csR = RESET; //checksum-left
 
+Servo buffTool;
 
 
 //  -- END OF FILE --
